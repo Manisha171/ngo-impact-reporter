@@ -1,5 +1,8 @@
 # NGO Impact Reporter
 
+**Live Demo:** https://ngo-reporter-frontend.onrender.com
+**API:** https://ngo-impact-reporter-1.onrender.com
+
 A full-stack web application that allows NGOs to submit monthly impact reports and enables admins to view aggregated data through a protected dashboard. Supports single report submission, bulk CSV upload with background processing, and real-time job progress tracking.
 
 ---
