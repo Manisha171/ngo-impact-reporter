@@ -3,7 +3,7 @@
 **Live Demo:** https://ngo-reporter-frontend.onrender.com
 **API:** https://ngo-impact-reporter-1.onrender.com
 
-A full-stack web application that allows NGOs to submit monthly impact reports and enables admins to view aggregated data through a protected dashboard. Supports single report submission, bulk CSV upload with background processing, and real-time job progress tracking.
+A web app for NGOs to submit monthly impact reports and for admins to track aggregated data. Built with a Node/Express backend, PostgreSQL, and a React + TypeScript frontend. Handles bulk CSV uploads in the background with real-time job progress.
 
 ---
 
@@ -31,7 +31,7 @@ A full-stack web application that allows NGOs to submit monthly impact reports a
 
 ## Getting Started
 
-You will need Node.js and a PostgreSQL instance running locally.
+You'll need **Node.js** and a **PostgreSQL** instance running locally.
 
 ### Via Docker
 
@@ -49,8 +49,8 @@ Starts PostgreSQL, backend, and frontend together. No manual setup needed.
 ### Via GitHub
 
 ```bash
-git clone https://github.com/Manisha171/ngo-reporter.git
-cd ngo-reporter
+git clone https://github.com/Manisha171/ngo-impact-reporter.git
+cd ngo-impact-reporter
 ```
 
 ### Via zip
@@ -84,7 +84,7 @@ Runs on http://localhost:5173
 
 ## Environment Variables
 
-Create a .env file inside the backend folder using .env.example as a template.
+Create a `.env` file inside the `backend` folder using `.env.example` as a template.
 
 | Variable | Description | Default |
 |---|---|---|
@@ -95,7 +95,7 @@ Create a .env file inside the backend folder using .env.example as a template.
 | PORT | Backend server port | 4000 |
 | CLIENT_URL | Frontend origin for CORS | http://localhost:5173 |
 
-Database tables (reports, jobs) are created automatically on first run.
+Database tables (`reports`, `jobs`) are created automatically on first run.
 
 ---
 
@@ -105,18 +105,18 @@ Database tables (reports, jobs) are created automatically on first run.
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | /auth/admin | Admin login - returns JWT |
+| POST | /auth/admin | Admin login — returns JWT |
 
 ### Reports
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | POST | /report | No | Submit a single report |
-| POST | /reports/upload | No | Upload CSV file - returns job_id |
+| POST | /reports/upload | No | Upload CSV file — returns job_id |
 | GET | /job-status/:job_id | No | Poll CSV processing status |
 | GET | /dashboard?month=YYYY-MM | Admin JWT | Aggregated stats for a month |
 
-Dashboard also supports &region=North and &ngo_id=NGO-001 query params for filtering.
+Dashboard also supports `&region=North` and `&ngo_id=NGO-001` query params for filtering.
 
 ---
 
@@ -160,15 +160,15 @@ NGO-001,2024-03,120,5,45000,North
 NGO-002,2024-03,80,3,30000,South
 ```
 
-- region is optional - rows without it are accepted
+- `region` is optional — rows without it are still accepted
 - Rows with missing required fields or invalid numbers are marked as failed
-- Duplicate entries (same ngo_id and month) are silently skipped
+- Duplicate entries (same `ngo_id` + `month`) are silently skipped
 
 ---
 
 ## Postman Collection
 
-Import postman_collection.json into Postman to test all endpoints. The collection includes variables for base_url and admin_token - run the Admin Login request first and the token is saved automatically for subsequent requests.
+Import `postman_collection.json` into Postman to test all endpoints. Variables for `base_url` and `admin_token` are included — run **Admin Login** first and the token saves automatically.
 
 ---
 
@@ -176,20 +176,20 @@ Import postman_collection.json into Postman to test all endpoints. The collectio
 
 ### Approach
 
-The main challenge was async CSV processing. When a file is uploaded, the backend immediately returns a job_id and hands off processing via setImmediate. The frontend polls /job-status/:job_id every 1.5 seconds and updates a progress bar in real time. This keeps the upload response fast regardless of file size.
+The main challenge was async CSV processing. When a file is uploaded, the backend immediately returns a `job_id` and hands off processing via `setImmediate`. The frontend polls `/job-status/:job_id` every 1.5 seconds and updates a progress bar in real time. This keeps the upload response fast regardless of file size.
 
-Idempotency is enforced at the database level - the reports table has a UNIQUE(ngo_id, month) constraint and all inserts use ON CONFLICT DO NOTHING. Re-uploading the same CSV or resubmitting the same form will not create duplicates.
+Idempotency is enforced at the database level — the `reports` table has a `UNIQUE(ngo_id, month)` constraint and all inserts use `ON CONFLICT DO NOTHING`. Re-uploading the same CSV or resubmitting the same form won't create duplicates.
 
-Partial failures are handled per row. Each failed row is logged with its row number and reason. The job completes even if some rows fail, and the UI shows exactly which rows failed and why. Failed rows are retried up to 3 times before being marked as failed.
+Partial failures are handled per row. Each failed row is logged with its row number and reason. The job completes even if some rows fail, and the frontend shows exactly which rows failed and why. Failed rows are retried up to 3 times before being marked as failed.
 
 ### Where AI Tools Helped
 
-Used GitHub Copilot occasionally for repetitive boilerplate - things like MUI component structure and TypeScript interface definitions. Everything else was written and reasoned through manually.
+Used GitHub Copilot occasionally for repetitive boilerplate — things like MUI component structure and TypeScript interface definitions. Everything else was written and reasoned through manually.
 
-### What I Would Improve in Production
+### What I'd Improve in Production
 
 - Replace the in-process queue with Bull + Redis so jobs survive server restarts
 - Add pagination to a reports list view on the dashboard
-- Rate limiting on the /report and /reports/upload endpoints
-- Refresh tokens so admin sessions do not expire mid-use
+- Rate limiting on the `/report` and `/reports/upload` endpoints
+- Refresh tokens so admin sessions don't expire mid-use
 - Structured logging with Winston or Pino instead of console.log
