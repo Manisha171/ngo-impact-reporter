@@ -1,0 +1,186 @@
+{
+  "info": {
+    "name": "NGO Impact Reporter",
+    "description": "API collection for NGO Impact Reporter — submit reports, upload CSV, poll job status, and view dashboard.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:4000" },
+    { "key": "admin_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('admin_token', res.token);",
+                  "  pm.test('Token received', () => pm.expect(res.token).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/auth/admin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Submit Single Report",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/report",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ngo_id\": \"NGO-001\",\n  \"month\": \"2024-03\",\n  \"people_helped\": 120,\n  \"events_conducted\": 5,\n  \"funds_utilized\": 45000,\n  \"region\": \"North\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Submit Report — Duplicate (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/report",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ngo_id\": \"NGO-001\",\n  \"month\": \"2024-03\",\n  \"people_helped\": 120,\n  \"events_conducted\": 5,\n  \"funds_utilized\": 45000\n}"
+            }
+          }
+        },
+        {
+          "name": "Submit Report — Missing Fields (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/report",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ngo_id\": \"NGO-002\",\n  \"month\": \"2024-03\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bulk Upload",
+      "item": [
+        {
+          "name": "Upload CSV File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.job_id) {",
+                  "  pm.collectionVariables.set('job_id', res.job_id);",
+                  "  pm.test('Job ID received', () => pm.expect(res.job_id).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/reports/upload",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "./sample_reports.csv",
+                  "description": "CSV file with columns: ngo_id, month, people_helped, events_conducted, funds_utilized, region"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Poll Job Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/job-status/{{job_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard — All Regions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/dashboard?month=2024-03",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard"],
+              "query": [{ "key": "month", "value": "2024-03" }]
+            }
+          }
+        },
+        {
+          "name": "Get Dashboard — Filter by Region",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/dashboard?month=2024-03&region=North",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard"],
+              "query": [
+                { "key": "month", "value": "2024-03" },
+                { "key": "region", "value": "North" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Dashboard — Filter by NGO ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/dashboard?month=2024-03&ngo_id=NGO-001",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard"],
+              "query": [
+                { "key": "month", "value": "2024-03" },
+                { "key": "ngo_id", "value": "NGO-001" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Dashboard — No Auth (401)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/dashboard?month=2024-03"
+          }
+        }
+      ]
+    }
+  ]
+}
